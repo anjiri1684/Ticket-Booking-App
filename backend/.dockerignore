@@ -1,0 +1,65 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output directories
+bin/
+build/
+dist/
+out/
+artifacts/
+
+# Source control
+.git
+.gitignore
+.gitattributes
+
+# Vendor (if using Go modules and not copying vendor)
+vendor/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# Logs and cache
+*.log
+*.tmp
+*.cache
+*.bak
+*.pid
+
+# Go-specific files
+go.work
+go.work.sum
+coverage.*
+*.coverprofile
+*.cov
+*.test
+
+# Docker config override
+docker-compose.override.yml
+
+# Node/npm (if mixed project)
+node_modules/
+package-lock.json
+yarn.lock

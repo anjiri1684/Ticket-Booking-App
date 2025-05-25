@@ -1,0 +1,64 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of go build
+/build/
+/bin/
+/out/
+
+# Dependency directories (for vendoring)
+vendor/
+
+# Go workspace file (Go 1.18+)
+go.work
+go.work.sum
+
+# Go coverage files
+*.cover
+*.cov
+coverage.out
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# Environment files
+.env
+.env.*
+
+# Module cache
+/pkg/mod/
+
+# Dependency lock (optional)
+go.sum
+
+# Docker related (if applicable)
+*.container
+*.image
+docker-compose.override.yml
+
+# Custom app-specific folders (if any)
+# e.g., /cache/, /dist/, /artifacts/, adjust as needed
+/cache/
+/dist/
+/artifacts/
