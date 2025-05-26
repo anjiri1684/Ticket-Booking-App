@@ -2,11 +2,10 @@ version: "3.9"
 
 services:
   app:
-    tty: true
-    restart: always
-    image: ticket-booking
+    build:
+      context: .
+    image: ticket-booking:dev
     container_name: ticket-booking
-    build: .
     ports:
       - 3000:3000
     env_file:
@@ -19,6 +18,8 @@ services:
     volumes:
       - .:/src/app
     command: air -c .air.toml
+    tty: true
+    restart: always
 
   db:
     image: postgres:alpine
@@ -34,7 +35,7 @@ services:
     networks:
       - application
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -d $DB_NAME -U $DB_USER"]
       interval: 10s
       timeout: 5s
       retries: 5

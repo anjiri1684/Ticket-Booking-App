@@ -45,6 +45,6 @@ func main() {
 	handlers.NewEventHandler(privateRoutes.Group("/event"), eventRepository)
 	handlers.NewTicketHandler(privateRoutes.Group("/ticket"), ticketRepository)
 
-
+	//listen the server
 	app.Listen(fmt.Sprintf("%s",":" + envConfig.ServerPort))
 }

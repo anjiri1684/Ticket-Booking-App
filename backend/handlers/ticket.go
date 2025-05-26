@@ -20,7 +20,8 @@ func(h *TicketHandler)GetMany(ctx *fiber.Ctx) error {
 
 	defer cancel()
 
-	userId := uint(ctx.Locals("userId").(float64))
+	userId := ctx.Locals("userId").(uint)
+
 
 	tickets, err := h.repository.GetMany(context, userId)
 
@@ -48,7 +49,8 @@ func (h *TicketHandler)GetOne(ctx *fiber.Ctx) error {
 
 	defer cancel()
 
-	userId := uint(ctx.Locals("userId").(float64))
+	userId := ctx.Locals("userId").(uint)
+
 
 
 	ticket, err := h.repository.GetOne(context,userId, uint(ticketId))
@@ -109,7 +111,8 @@ func (h *TicketHandler) CreateOne(ctx *fiber.Ctx) error {
 	// 	})
 	// }
 
-	userId := uint(ctx.Locals("userId").(float64))
+	userId := ctx.Locals("userId").(uint)
+
 
 	ticket, err := h.repository.CreateOne(ctxWithTimeout,userId, newTicket)
 	if err != nil {
@@ -128,44 +131,52 @@ func (h *TicketHandler) CreateOne(ctx *fiber.Ctx) error {
 }
 
 
-func (h *TicketHandler)ValidateOne(ctx *fiber.Ctx) error {
-	context, cancel := context.WithTimeout(context.Background(), time.Duration(5 * time.Second))
-	
+func (h *TicketHandler) ValidateOne(ctx *fiber.Ctx) error {
+	// Context with timeout
+	reqCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	validateBody := &models.ValidateTicket{}
-
-	if err := ctx.BodyParser(&validateBody); err != nil {
+	// Parse request body
+	validateBody := new(models.ValidateTicket)
+	if err := ctx.BodyParser(validateBody); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"Status": "Failed",
-			"message": "failed to validate",
-			"data": nil,
+			"status":  "Failed",
+			"message": "Invalid request payload",
+			"error":   err.Error(),
 		})
 	}
 
-	validateData := make(map[string]interface{})
-	validateData["entered"] = true
+	// 🚨 Validate required fields
+	if validateBody.TicketId == 0 || validateBody.OwnerId == 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "Failed",
+			"message": "Ticket ID and Owner ID must be greater than 0",
+		})
+	}
 
+	// Prepare update payload
+	validateData := map[string]interface{}{
+		"entered": true,
+	}
 
-	validTicket, err := h.repository.UpdateOne(context,validateBody.OwnerId, validateBody.TicketId, validateData)
-
+	// Execute update in repo
+	validTicket, err := h.repository.UpdateOne(reqCtx, validateBody.OwnerId, validateBody.TicketId, validateData)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadGateway).JSON(fiber.Map{
-			"Status": "Failed",
+			"status":  "Failed",
 			"message": "Ticket validation failed",
-			"error": err.Error(),
+			"error":   err.Error(),
 		})
 	}
 
+	// Success response
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status": "Success",
-		"message": "Ticket Validation success",
-		"data": validTicket,
+		"status":  "Success",
+		"message": "Ticket validation successful",
+		"data":    validTicket,
 	})
-
-
-
 }
+
 
 func NewTicketHandler(router fiber.Router, repository models.TicketRepository) {
 	handler := &TicketHandler{

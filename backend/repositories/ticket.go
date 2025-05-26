@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/anjiri1684/ticket-booking-project-v1/models"
 	"gorm.io/gorm"
@@ -36,6 +38,8 @@ func (r *TicketRepository)GetOne(ctx context.Context,userId uint, ticketId uint)
 
 func (r *TicketRepository)CreateOne(ctx context.Context,userId uint, ticket *models.Ticket) (*models.Ticket, error) {
 
+	ticket.UserID = userId
+
 	res := r.db.Model(ticket).Create(ticket)
 
 	if res.Error != nil {
@@ -45,19 +49,33 @@ func (r *TicketRepository)CreateOne(ctx context.Context,userId uint, ticket *mod
 	return r.GetOne(ctx,userId, ticket.ID)
 }
 
-func (r *TicketRepository)UpdateOne(ctx context.Context,userId uint, ticketId uint, updateData map[string]interface{}) (*models.Ticket, error) {
+func (r *TicketRepository) UpdateOne(ctx context.Context, userId uint, ticketId uint, updateData map[string]interface{}) (*models.Ticket, error) {
+	if ticketId == 0 || userId == 0 {
+		return nil, errors.New("invalid ticketId or userId")
+	}
 
 	ticket := &models.Ticket{}
 
+	// Apply the update with strict user scoping
+	updateRes := r.db.WithContext(ctx).
+		Model(ticket).
+		Where("id = ? AND user_id = ?", ticketId, userId).
+		Updates(updateData)
 
-	updateRes := r.db.Model(ticket).Where("id = ?", ticketId).Updates(updateData)
-
+	// Handle DB errors
 	if updateRes.Error != nil {
 		return nil, updateRes.Error
 	}
 
-	return r.GetOne(ctx,userId, ticketId)
+	// Handle no rows updated
+	if updateRes.RowsAffected == 0 {
+		return nil, fmt.Errorf("no ticket found for id=%d and user_id=%d", ticketId, userId)
+	}
+
+	// Fetch and return updated ticket
+	return r.GetOne(ctx, userId, ticketId)
 }
+
 
 func NewTicketRepository(db *gorm.DB) models.TicketRepository {
 	return &TicketRepository{

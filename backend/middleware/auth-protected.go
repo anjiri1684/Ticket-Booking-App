@@ -14,65 +14,71 @@ import (
 )
 
 func AuthProtected(db *gorm.DB) fiber.Handler {
-	return func(ctx *fiber.Ctx)error {
-		authHeader := ctx.Get("Authorization")
-
-		if authHeader == "" {
-			log.Warnf("empty authorization header")
-
-			return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
-				"status": "fail",
-				"message": "Unauthorized",
-			})
-		}
-
-		
-
-		tokenParts := strings.Split(authHeader, " ")
-
-		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			log.Warnf("Inavalid token parts")
-
-
-			return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
-				"status": "fail",
-				"message": "Unauthorized",
-			})
-		}
-		tokenString := tokenParts[1]
-		secret := []byte(os.Getenv("JWT_SECRET"))
-
-		token ,err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if token.Method.Alg() != jwt.GetSigningMethod("HS256").Alg() {
-				return nil, fmt.Errorf("unexpected signing methid: %v", token.Header["alg"])
-			}
-			return secret, nil
-		})
-
-		if err != nil || !token.Valid {
-			log.Warnf("Inavalid token")
-
-			return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
-				"status": "fail",
-				"message": "Unauthorized",
-			})
-		}
-
-			userId:= token.Claims.(jwt.MapClaims)["id"]
-
-			if err := db.Model(&models.User{}).Where("id = ?", userId).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-				log.Warnf("user not found in the db")
-
-				return ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
-					"status": "fail",
-					"message": "Unauthorized",
-				})
-			}
-
-			ctx.Locals("userId", userId)
-
-			return ctx.Next()
-
-		
+	return func(ctx *fiber.Ctx) error {
+	    authHeader := ctx.Get("Authorization")
+	    if authHeader == "" {
+		   log.Warn("Missing Authorization header")
+		   return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			  "status":  "fail",
+			  "message": "Unauthorized",
+		   })
+	    }
+ 
+	    parts := strings.SplitN(authHeader, " ", 2)
+	    if len(parts) != 2 || parts[0] != "Bearer" {
+		   log.Warn("Invalid Authorization format")
+		   return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			  "status":  "fail",
+			  "message": "Unauthorized",
+		   })
+	    }
+ 
+	    tokenString := parts[1]
+	    secret := []byte(os.Getenv("JWT_SECRET"))
+ 
+	    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		   if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			  return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		   }
+		   return secret, nil
+	    })
+ 
+	    if err != nil || !token.Valid {
+		   log.Warn("Invalid or expired token")
+		   return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			  "status":  "fail",
+			  "message": "Unauthorized",
+		   })
+	    }
+ 
+	    claims, ok := token.Claims.(jwt.MapClaims)
+	    if !ok || !token.Valid {
+		   return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			  "status":  "fail",
+			  "message": "Invalid token claims",
+		   })
+	    }
+ 
+	    userIDFloat, ok := claims["id"].(float64)
+	    if !ok {
+		   return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			  "status":  "fail",
+			  "message": "Invalid token payload",
+		   })
+	    }
+	    userID := uint(userIDFloat)
+ 
+	    var user models.User
+	    if err := db.First(&user, "id = ?", userID).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		   log.Warn("User not found in DB")
+		   return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			  "status":  "fail",
+			  "message": "Unauthorized",
+		   })
+	    }
+ 
+	    ctx.Locals("userId", userID)
+	    return ctx.Next()
 	}
-}
+ }
+ 
