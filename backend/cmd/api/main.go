@@ -10,6 +10,8 @@ import (
 	"github.com/anjiri1684/ticket-booking-project-v1/repositories"
 	"github.com/anjiri1684/ticket-booking-project-v1/services"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+
 )
 
 func main() {
@@ -23,6 +25,14 @@ func main() {
 		AppName: "Ticket Booking",
 		ServerHeader: "Fiber",
 	})
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://192.168.0.100:19006,exp://192.168.0.100:19000",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowCredentials: true,
+	}))
+	
 
 	//repository
 	eventRepository := repositories.NewEventRepository(db)
