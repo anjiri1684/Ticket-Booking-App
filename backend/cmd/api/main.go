@@ -6,7 +6,9 @@ import (
 	"github.com/anjiri1684/ticket-booking-project-v1/config"
 	"github.com/anjiri1684/ticket-booking-project-v1/db"
 	"github.com/anjiri1684/ticket-booking-project-v1/handlers"
+	"github.com/anjiri1684/ticket-booking-project-v1/middleware"
 	"github.com/anjiri1684/ticket-booking-project-v1/repositories"
+	"github.com/anjiri1684/ticket-booking-project-v1/services"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -29,19 +31,19 @@ func main() {
 
 
 	//service
-	authService := services.newAuthServices(authRepository)
+	authService := services.NewAuthServices(authRepository)
 
 	//routing
 	server := app.Group("/api")
-	handlers.newAuthHanlder(server.Group("/auth"), authService)
+	handlers.NewAuthHanlder(server.Group("/auth"), authService)
 
 
-	privateRoutes := server.Use(middleware.AuthProtectes(db))
+	privateRoutes := server.Use(middleware.AuthProtected(db))
 
 
 	//handlers
-	handlers.NewEventHandler(server.Group("/event"), eventRepository)
-	handlers.NewTicketHandler(server.Group("/ticket"), ticketRepository)
+	handlers.NewEventHandler(privateRoutes.Group("/event"), eventRepository)
+	handlers.NewTicketHandler(privateRoutes.Group("/ticket"), ticketRepository)
 
 
 	app.Listen(fmt.Sprintf("%s",":" + envConfig.ServerPort))

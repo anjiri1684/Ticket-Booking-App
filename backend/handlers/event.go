@@ -56,7 +56,7 @@ func (h *EventHandler)GetOne(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"Status": "Success",
-		"message": "",
+		"message": "Succesfully retrived event",
 		"data": event,
 	})
 
