@@ -16,52 +16,51 @@ type AuthHandler struct {
 }
 
 
-func (h *AuthHandler)Login(ctx *fiber.Ctx)error {
+func (h *AuthHandler) Login(ctx *fiber.Ctx) error {
 	creds := &models.AuthCredentials{}
-
-	context, cancel := context.WithTimeout(context.Background(), time.Duration( 5 *time.Second))
-
+ 
+	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
+ 
 	if err := ctx.BodyParser(&creds); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status": "Fail",
-			"message": "Failed to Login",
-			"error": err.Error(),
-		})
+	    return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		   "status":  "fail",
+		   "message": "Failed to parse login request",
+		   "error":   err.Error(),
+	    })
 	}
-
+ 
 	if err := validate.Struct(creds); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status": "Fail",
-			"message": "Please provide a valid email and password",
-			"error": err.Error(),
-		})
+	    return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		   "status":  "fail",
+		   "message": "Please provide a valid email and password",
+		   "error":   err.Error(),
+	    })
 	}
-
+ 
 	token, user, err := h.service.Login(context, creds)
-
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status": "Fail",
-			"message": "Failed to login",
-			"error": err.Error(),
-		})
+	    return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		   "status":  "fail",
+		   "message": "Failed to login",
+		   "error":   err.Error(),
+	    })
 	}
-
+ 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"Status": "Success",
-		"message": "login success",
-		"token": token,
-		"data": fiber.Map{
-			"id": user.ID,
-			"email": user.Email,
-			"role": user.Role,
-			
-		},
+	    "status":  "success",
+	    "message": "login success",
+	    "data": fiber.Map{
+		   "user": fiber.Map{
+			  "id":    user.ID,
+			  "email": user.Email,
+			  "role":  user.Role,
+		   },
+		   "token": token,
+	    },
 	})
-
-}
+ }
+ 
 
 func (h *AuthHandler)Register(ctx *fiber.Ctx)error {
 	creds := &models.AuthCredentials{}
